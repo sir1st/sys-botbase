@@ -1,0 +1,11 @@
+{
+    "files.associations": {
+        "types.h": "c",
+        "commands.h": "c",
+        "math.h": "c",
+        "util.h": "c",
+        "freeze.h": "c",
+        "switch.h": "c",
+        "utimer.h": "c"
+    }
+}

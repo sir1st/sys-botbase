@@ -6,7 +6,7 @@
 
 import socket
 import time
-
+import os
 
 # Make sure to append "\r\n" to the end of every command to ensure arg are parsed correctly
 def sendCommand(s, content):
@@ -16,7 +16,28 @@ def sendCommand(s, content):
 
 # sys-botbase port is compiled for 6000
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect(("192.168.178.25", 6000))
+s.connect(("192.168.31.160", 6000))
+
+current_posix_timestamp_seconds = int(time.time()) + 60*60*3
+print( int(time.time()) )
+#sendCommand(s, f"getUserSystemClock {current_posix_timestamp_seconds}")
+sendCommand(s, f"TimeType_UserSystemClock {current_posix_timestamp_seconds}")
+result = s.recv(100)[:-1]
+print("get result")
+print(result.decode('utf-8') )
+
+sendCommand(s, f"TimeType_NetworkSystemClock {current_posix_timestamp_seconds}")
+result = s.recv(100)[:-1]
+print("get result")
+print(result.decode('utf-8') )
+
+sendCommand(s, f"TimeType_LocalSystemClock {current_posix_timestamp_seconds}")
+result = s.recv(100)[:-1]
+print("get result")
+print(result.decode('utf-8') )
+
+
+os._exit(0)
 
 
 # Read file bytes

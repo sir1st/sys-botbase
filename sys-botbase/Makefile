@@ -7,7 +7,7 @@ endif
 TOPDIR ?= $(CURDIR)
 include $(DEVKITPRO)/libnx/switch_rules
 
-TARGET		:=	sys-botbase
+TARGET		:=	exefs
 BUILD		:=	build
 SOURCES		:=	source
 DATA		:=	data
