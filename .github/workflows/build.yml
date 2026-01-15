@@ -1,0 +1,31 @@
+name: Build
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: devkitpro/devkita64:latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Update packages
+        run: dkp-pacman -Syu --noconfirm
+
+      - name: Build
+        run: make -j$(nproc)
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sys-botbase
+          path: |
+            sys-botbase/sys-botbase.nsp
+          if-no-files-found: error
