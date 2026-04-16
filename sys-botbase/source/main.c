@@ -104,9 +104,9 @@ void __appInit(void)
     rc = viInitialize(ViServiceType_Default);
     if (R_FAILED(rc))
         fatalThrow(rc);
-    rc = timeInitialize();
-    if (R_FAILED(rc))
-        fatalThrow(rc);    
+    // rc = timeInitialize();
+    // if (R_FAILED(rc))
+    //     fatalThrow(rc);    
 }
 
 void __appExit(void)
@@ -116,7 +116,7 @@ void __appExit(void)
     audoutExit();
     socketExit();
     viExit();
-    timeExit();
+    //timeExit();
 }
 
 u64 mainLoopSleepTime = 50;
