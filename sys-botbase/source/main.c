@@ -57,6 +57,19 @@ int fd_size = 5;
 u32 __nx_applet_type = AppletType_None;
 TimeServiceType __nx_time_service_type = TimeServiceType_System;
 
+// lazy init for time service - non-fatal on failure
+static bool timeServiceInitialized = false;
+
+static bool ensureTimeService(void) {
+    if (timeServiceInitialized)
+        return true;
+    Result rc = timeInitialize();
+    if (R_FAILED(rc))
+        return false;
+    timeServiceInitialized = true;
+    return true;
+}
+
 // we override libnx internals to do a minimal init
 void __libnx_initheap(void)
 {
@@ -122,19 +135,6 @@ u64 freezeRate = 3;
 bool debugResultCodes = false;
 
 bool echoCommands = false;
-
-// lazy init for time service - non-fatal on failure
-static bool timeServiceInitialized = false;
-
-static bool ensureTimeService(void) {
-    if (timeServiceInitialized)
-        return true;
-    Result rc = timeInitialize();
-    if (R_FAILED(rc))
-        return false;
-    timeServiceInitialized = true;
-    return true;
-}
 
 void makeTouch(HidTouchState* state, u64 sequentialCount, u64 holdTime, bool hold)
 {
