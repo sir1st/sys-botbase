@@ -55,7 +55,7 @@ int fd_size = 5;
 
 // we aren't an applet
 u32 __nx_applet_type = AppletType_None;
-TimeServiceType __nx_time_service_type = TimeServiceType_Menu;
+TimeServiceType __nx_time_service_type = TimeServiceType_System;
 
 // we override libnx internals to do a minimal init
 void __libnx_initheap(void)
@@ -104,9 +104,6 @@ void __appInit(void)
     rc = viInitialize(ViServiceType_Default);
     if (R_FAILED(rc))
         fatalThrow(rc);
-    // rc = timeInitialize();
-    // if (R_FAILED(rc))
-    //     fatalThrow(rc);    
 }
 
 void __appExit(void)
@@ -116,7 +113,8 @@ void __appExit(void)
     audoutExit();
     socketExit();
     viExit();
-    //timeExit();
+    if (timeServiceInitialized)
+        timeExit();
 }
 
 u64 mainLoopSleepTime = 50;
@@ -124,6 +122,19 @@ u64 freezeRate = 3;
 bool debugResultCodes = false;
 
 bool echoCommands = false;
+
+// lazy init for time service - non-fatal on failure
+static bool timeServiceInitialized = false;
+
+static bool ensureTimeService(void) {
+    if (timeServiceInitialized)
+        return true;
+    Result rc = timeInitialize();
+    if (R_FAILED(rc))
+        return false;
+    timeServiceInitialized = true;
+    return true;
+}
 
 void makeTouch(HidTouchState* state, u64 sequentialCount, u64 holdTime, bool hold)
 {
@@ -164,24 +175,33 @@ int argmain(int argc, char** argv)
         if(argc!=2)
             return 0;
 
-        time_t userTime, userTime1, userTime2;
+        if (!ensureTimeService()) {
+            printf("getUserSystemClock failed: time service unavailable\n");
+            return 0;
+        }
 
-        Result rs = timeGetCurrentTime(TimeType_NetworkSystemClock, (u64*)&userTime);
-        Result rs1 = timeGetCurrentTime(TimeType_NetworkSystemClock, (u64*)&userTime1);
-        Result rs2 = timeGetCurrentTime(TimeType_NetworkSystemClock, (u64*)&userTime2);
-        if (R_FAILED(rs) || R_FAILED(rs1) || R_FAILED(rs2)) {
-            printf("%s %u %u %u\n","getUserSystemClock failed", rs, rs1, rs2);
+        time_t userTime;
+
+        Result rs = timeGetCurrentTime(TimeType_UserSystemClock, (u64*)&userTime);
+        if (R_FAILED(rs)) {
+            printf("%s %u\n","getUserSystemClock failed", rs);
         } else {
-            printf("%s %lu %lu %lu\n","succ getUserSystemClock", userTime, userTime1, userTime2);
-        }            
+            printf("%s %lu\n","succ getUserSystemClock", userTime);
+        }
     }
 
     if(!strcmp(argv[0],"TimeType_UserSystemClock"))
     {
         if(argc!=2)
             return 0;
+
+        if (!ensureTimeService()) {
+            printf("TimeType_UserSystemClock failed: time service unavailable\n");
+            return 0;
+        }
+
         u64 timestamp = parseStringToInt(argv[1]);
-        
+
         Result rs = timeSetCurrentTime(TimeType_UserSystemClock, timestamp);
         if (R_FAILED(rs)) {
             printf("%s %u\n","TimeType_UserSystemClock failed", rs);
@@ -194,28 +214,34 @@ int argmain(int argc, char** argv)
     {
         if(argc!=2)
             return 0;
+
+        if (!ensureTimeService()) {
+            printf("TimeType_NetworkSystemClock failed: time service unavailable\n");
+            return 0;
+        }
+
         u64 timestamp = parseStringToInt(argv[1]);
-        
+
         Result rs1 = timeSetCurrentTime(TimeType_NetworkSystemClock , timestamp);
         if (R_FAILED(rs1)) {
             printf("fail TimeType_NetworkSystemClock\n");
         } else {
             printf("succ TimeType_NetworkSystemClock\n");
         }
-        // Result rs2 = timeSetCurrentTime(TimeType_LocalSystemClock, timestamp);
-        // if (R_FAILED(rs2)) {
-        //     printf("fail TimeType_LocalSystemClock\n");
-        // } else {
-        //     printf("succ TimeType_LocalSystemClock\n");
-        // }
     }
 
     if(!strcmp(argv[0],"TimeType_LocalSystemClock"))
     {
         if(argc!=2)
             return 0;
+
+        if (!ensureTimeService()) {
+            printf("TimeType_LocalSystemClock failed: time service unavailable\n");
+            return 0;
+        }
+
         u64 timestamp = parseStringToInt(argv[1]);
-        
+
         Result rs2 = timeSetCurrentTime(TimeType_LocalSystemClock, timestamp);
         if (R_FAILED(rs2)) {
             printf("fail TimeType_LocalSystemClock\n");
